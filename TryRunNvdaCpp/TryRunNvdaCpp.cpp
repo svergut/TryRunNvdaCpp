@@ -80,17 +80,17 @@ int main(array<System::String ^> ^args)
 
 	pacc2->get_uniqueID(&id);
 
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();	
-
-	auto buf = new VBufStorage_buffer_t();
-	auto res = fillVBuf((int) topChromeWindow, pacc2, buf, NULL, NULL);
-
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-	auto secondsElapsed = (end - begin).count() / 1000000000.0;
-	std::cout << "Chrome tree built in " << secondsElapsed << "s";
-
-	auto firstChild = res->getLastChild();
+	//std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();	
+	//
+	//auto buf = new VBufStorage_buffer_t();
+	//auto res = fillVBuf((int) topChromeWindow, pacc2, buf, NULL, NULL);
+	//
+	//std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	//
+	//auto secondsElapsed = (end - begin).count() / 1000000000.0;
+	//std::cout << "Chrome tree built in " << secondsElapsed << "s";
+	//
+	//auto firstChild = res->getLastChild();
 
 	std::wstring text;
 
@@ -106,14 +106,47 @@ int main(array<System::String ^> ^args)
 	int startOffset = 0;
 	int endOffset = 0;
 
-	auto rootControlNode = backend->locateControlFieldNodeAtOffset(0, &startOffset, &endOffset, &chromePtr, &controlFieldNodeId);
+	auto rootControlNode = backend->locateControlFieldNodeAtOffset(-1, &startOffset, &endOffset, &chromePtr, &controlFieldNodeId);
 	
-	std::vector<VBufStorage_controlFieldNode_t*> rootChildren = {};
+	std::vector<VBufStorage_fieldNode_t*> rootNodes = {};
 
-	for (auto child = rootControlNode->getFirstChild(); child; child = child->getNext()) {
-		//rootChildren.push_back(child);
+	std::wstring attribs = L"IAccessible::role";
+	std::wstring regexp = L"IAccessible\\\\:\\\\:role:(?:43;)";
+	int so = 0;
+	int eo = backend->getTextLength();
 
-	}
+	std::vector<VBufStorage_fieldNode_t*> linksOnCurrentTab = {};
+
+	auto link = backend->findNodeByAttributes(0, VBufStorage_findDirection_forward, attribs, regexp, &so, &eo);
+
+	std::cout << "Backend len is " << backend->getTextLength() << '\n';
+
+	SetConsoleOutputCP(CP_UTF8);
+	
+	while (link) {		
+		int offset = so;
+
+		linksOnCurrentTab.push_back(link);
+
+		std::wstring t;		
+		
+		link->getTextInRange(0, link->getLength(), t);
+
+		const wchar_t newLine = '\n';
+
+		wprintf(&newLine);
+		wprintf(t.c_str());
+
+		link = backend->findNodeByAttributes(offset, VBufStorage_findDirection_forward, attribs, regexp, &so, &eo);	
+	}	
+
+	//for (auto next = (VBufStorage_fieldNode_t *) rootControlNode; next; next = next->getNext()) {
+	//	std::wstring attr = next->getAttributesString();
+	//
+	//	rootNodes.push_back(next);
+	//}
+
+	std::cout << "end";
 
 	return 0;
 }
