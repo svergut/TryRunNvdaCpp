@@ -38,6 +38,7 @@ int main(array<System::String ^> ^args)
     DWORD chromePid = GetProcessIdByName(c);
     HWND topChromeWindow = FindTopWindow(chromePid);
 
+
     IAccessible* pacc;
 
     AccessibleObjectFromWindow(topChromeWindow, OBJID_CLIENT, IID_IAccessible, reinterpret_cast<void**>(&pacc));
@@ -130,9 +131,38 @@ int main(array<System::String ^> ^args)
 
 		std::wstring t;		
 		
-		link->getTextInRange(0, link->getLength(), t);
+		link->getTextInRange(0, link->getLength(), t);		
+		
+		int ctrlNodeId;
+		int ctrlNodeDocHandle;
+
+		auto ctrlNode = dynamic_cast<VBufStorage_controlFieldNode_t*>(link);
+
+		if (ctrlNode) {			
+			ctrlNode->getIdentifier(&ctrlNodeDocHandle, &ctrlNodeId);
+		}
 
 		const wchar_t newLine = '\n';
+
+		IAccessible* ctrlNodeAcc;
+
+		VARIANT variant;
+		variant.vt = VT_I4;
+		variant.lVal = CHILDID_SELF;
+
+		long ytop, xleft, width, height;
+
+		if (ctrlNodeId) {			
+
+			AccessibleObjectFromEvent((HWND)ctrlNodeDocHandle, OBJID_CLIENT, ctrlNodeId, &ctrlNodeAcc, &variant);
+		}
+
+		if (ctrlNodeAcc) {
+			BSTR ctrlNodeName;			
+			ctrlNodeAcc->accLocation(&xleft, &ytop, &width, &height, variant);
+
+			std::cout << width << "x" << height << '\n';
+		}
 
 		wprintf(&newLine);
 		wprintf(t.c_str());
@@ -146,7 +176,7 @@ int main(array<System::String ^> ^args)
 	//	rootNodes.push_back(next);
 	//}
 
-	std::cout << "end";
+	std::cout << "end";		
 
 	return 0;
 }
@@ -169,6 +199,7 @@ VBufStorage_fieldNode_t* fillVBuf(int docHandle, IAccessible2* pacc, VBufStorage
 	}
 
 	int id;
+
 	if (pacc->get_uniqueID((long*)&id) != S_OK)
 		return NULL;
 
